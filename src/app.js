@@ -29,6 +29,121 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ============================================
+// 🎯 SOCIAL MEDIA PREVIEW HANDLER (ADD THIS HERE - BEFORE CORS AND OTHER MIDDLEWARE)
+// ============================================
+
+app.use((req, res, next) => {
+    // Check if the request is from a social media crawler/bot
+    const userAgent = req.headers['user-agent'] || '';
+    const isCrawler = /bot|crawler|spider|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Snapchat|TelegramBot|Pinterest|Slack|Discord|Slackbot|Googlebot|Bingbot/i.test(userAgent);
+    
+    // Only handle crawlers requesting the main page or property pages
+    const isMainPage = req.path === '/' || req.path === '';
+    const isPropertyPage = req.path.startsWith('/property/');
+    
+    if (isCrawler && (isMainPage || isPropertyPage)) {
+        // For property pages, you could dynamically set the title and image
+        let pageTitle = "Taye's Property & Realty Solution";
+        let pageDescription = "Find your dream property with Taye's Property & Realty Solution. Browse luxury homes, apartments, and commercial spaces in prime locations.";
+        let pageImage = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=630&fit=crop";
+        
+        // If it's a property detail page, you could fetch property data here
+        // For now, using default values
+        
+        // Send pre-rendered HTML with meta tags for social media
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <title>${pageTitle}</title>
+                
+                <!-- Primary Meta Tags -->
+                <meta name="title" content="${pageTitle}">
+                <meta name="description" content="${pageDescription}">
+                
+                <!-- Open Graph / Facebook -->
+                <meta property="og:type" content="website">
+                <meta property="og:url" content="https://tayespropertyandrealtysolution.com${req.path}">
+                <meta property="og:title" content="${pageTitle}">
+                <meta property="og:description" content="${pageDescription}">
+                <meta property="og:image" content="${pageImage}">
+                <meta property="og:site_name" content="Taye's Property & Realty Solution">
+                
+                <!-- Twitter -->
+                <meta property="twitter:card" content="summary_large_image">
+                <meta property="twitter:url" content="https://tayespropertyandrealtysolution.com${req.path}">
+                <meta property="twitter:title" content="${pageTitle}">
+                <meta property="twitter:description" content="${pageDescription}">
+                <meta property="twitter:image" content="${pageImage}">
+                
+                <!-- WhatsApp / iMessage / SMS Preview -->
+                <meta property="og:image:width" content="1200">
+                <meta property="og:image:height" content="630">
+                
+                <!-- Favicon (optional - prevents 404 errors) -->
+                <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+                
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                        text-align: center;
+                        padding: 50px 20px;
+                        background: #f5f5f5;
+                        margin: 0;
+                    }
+                    .container {
+                        max-width: 800px;
+                        margin: 0 auto;
+                        background: white;
+                        border-radius: 16px;
+                        padding: 40px;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    }
+                    img {
+                        max-width: 100%;
+                        border-radius: 12px;
+                        margin: 20px 0;
+                    }
+                    h1 {
+                        color: #1a1a2e;
+                        font-size: 28px;
+                    }
+                    p {
+                        color: #666;
+                        font-size: 18px;
+                        line-height: 1.5;
+                    }
+                    .logo {
+                        font-size: 48px;
+                        margin-bottom: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="logo">🏠</div>
+                    <h1>${pageTitle}</h1>
+                    <img src="${pageImage}" alt="${pageTitle}" style="max-width: 100%; border-radius: 12px;">
+                    <p>${pageDescription}</p>
+                    <p style="margin-top: 20px; font-size: 14px; color: #999;">
+                        Loading the full experience...
+                    </p>
+                </div>
+            </body>
+            </html>
+        `);
+    }
+    
+    // Not a crawler - continue to your normal routes
+    next();
+});
+
+// ============================================
+// END OF SOCIAL MEDIA PREVIEW HANDLER
+// ============================================
+
 // Middlewares - COMPLETE CORS FIX
 const cors = require('cors');
 
