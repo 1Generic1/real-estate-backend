@@ -34,6 +34,8 @@ const cors = require('cors');
 
 // Allow multiple origins
 const allowedOrigins = [
+  'https://tayespropertyandrealtysolution.com',     // Your custom domain (NO www)
+  'https://www.tayespropertyandrealtysolution.com', // Your custom domain (WITH www)
   'https://beige-jay-506169.hostingersite.com',
   'https://steelblue-yak-507597.hostingersite.com',
   'http://localhost:3000'
