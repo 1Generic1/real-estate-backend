@@ -6,6 +6,7 @@ const {
 } = require("../config/cloudinary");
 const { AppError } = require("../middleware/errorMiddleware");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const { generateReferenceLetter } = require("../services/pdf.service");
 const { sendVerificationEmail } = require("../services/emailService");
 
