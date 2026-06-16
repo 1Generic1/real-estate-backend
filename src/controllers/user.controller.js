@@ -7,6 +7,7 @@ const {
 const { AppError } = require("../middleware/errorMiddleware");
 const crypto = require("crypto");
 const { generateReferenceLetter } = require("../services/pdf.service");
+const { sendVerificationEmail } = require("../services/emailService");
 
 // ==================== PUBLIC FUNCTIONS ====================
 
@@ -45,8 +46,14 @@ exports.register = async (req, res, next) => {
     // Generate verification token
     const verificationToken = await user.generateVerificationToken();
 
-    // TODO: Send verification email
-    // await sendVerificationEmail(user.email, verificationToken, user.firstName);
+    // Send verification email
+    try {
+      await sendVerificationEmail(user.email, verificationToken, user.firstName);
+      console.log(`✅ Verification email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error(`❌ Failed to send verification email to ${user.email}:`, emailError.message);
+      // Don't fail registration - user can request new verification link later
+    }
 
     // Remove password from response
     const userResponse = user.toObject();
@@ -98,44 +105,56 @@ exports.verifyEmail = async (req, res, next) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/users/login
+// @desc    Verify email
+// @route   GET /api/users/verify-email/:token
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      throw new AppError("Email and password are required", 400);
+      throw new AppError("Email and password are required", 400, "ValidationError");
     }
 
+    // Find user with password
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      throw new AppError("Invalid credentials", 401);
+      throw new AppError("Invalid credentials", 401, "AuthenticationError");
     }
 
-    if (!user.isActive) {
+    // ✅ CHECK IF EMAIL IS VERIFIED
+    if (!user.emailVerified) {
       throw new AppError(
-        "Account is deactivated. Please contact support.",
+        "Please verify your email before logging in. Check your inbox for the verification link.",
         401,
+        "EmailNotVerified"
       );
     }
 
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError(
+        "Your account has been deactivated. Please contact support.",
+        401,
+        "AccountDeactivated"
+      );
+    }
+
+    // Compare password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      throw new AppError("Invalid credentials", 401);
+      throw new AppError("Invalid credentials", 401, "AuthenticationError");
     }
 
     // Update last login
     await user.updateLastLogin();
 
-    // Generate JWT token
-    const jwt = require("jsonwebtoken");
+    // Generate token
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE || "7d" },
+      { expiresIn: process.env.JWT_EXPIRE || "7d" }
     );
 
     const userResponse = user.toObject();
