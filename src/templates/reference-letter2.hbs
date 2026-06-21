@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reference Letter - {{referenceNumber}}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "Times New Roman", Times, serif;
+        background: white;
+      }
+
+      .letter-container {
+        width: 100%;
+        height: 100%;
+        min-height: 100vh;
+        background: white;
+      }
+
+      .letter {
+        width: 100%;
+        padding: 30px 40px 25px 40px;
+        background: white;
+        min-height: 100vh;
+        height: 100%;
+        position: relative;
+      }
+
+      /* Decorative border */
+      .letter::before {
+        content: "";
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        border: 1.5px solid #b8860b;
+        pointer-events: none;
+      }
+
+      /* ===== HEADER ===== */
+      .header {
+        text-align: center;
+        margin-bottom: 28px;
+        padding-bottom: 22px;
+        border-bottom: 2.5px solid #b8860b;
+        flex-shrink: 0;
+      }
+
+      .company-name {
+        font-size: 40px;
+        font-weight: bold;
+        color: #1a1a2e;
+        letter-spacing: 5px;
+      }
+
+      .company-name span {
+        color: #b8860b;
+      }
+
+      .company-tagline {
+        font-size: 22px;
+        color: #666;
+        margin-top: 10px;
+        letter-spacing: 4px;
+      }
+
+      .company-details {
+        font-size: 16px;
+        color: #888;
+        margin-top: 14px;
+        line-height: 2;
+        letter-spacing: 0.5px;
+      }
+
+      /* ===== REFERENCE INFO - FIXED ===== */
+      .reference-info1 {
+        display: flex !important;
+        justify-content: space-between !important;
+        margin-bottom: 40px;
+        font-size: 17px;
+        color: #555;
+      }
+
+      .reference-info1 div {
+        flex: 1;
+      }
+
+      .reference-info1 div:first-child {
+        text-align: left;
+      }
+
+      .reference-info1 div:last-child {
+        text-align: right;
+      }
+
+      /* ===== SUBJECT ===== */
+      .subject {
+        margin-bottom: 25px;
+      }
+
+      .subject h3 {
+        color: #1a1a2e;
+        font-size: 22px;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+
+      .subject h1 {
+        color: #b8860b;
+        font-size: 30px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      /* ===== CONTENT ===== */
+      .content {
+        flex: 1;
+        line-height: 2.3;
+        font-size: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 10px 0;
+        letter-spacing: 0.5px;
+      }
+
+      .salutation {
+        margin-bottom: 20px;
+        font-size: 22px;
+        letter-spacing: 1px;
+      }
+
+      p {
+        margin-bottom: 18px;
+        text-align: justify;
+      }
+
+      /* ===== CLIENT INFO BOX ===== */
+      .client-info {
+        background: #f9f9f9;
+        padding: 22px 28px;
+        margin: 20px 0;
+        border-left: 5px solid #b8860b;
+        flex-shrink: 0;
+      }
+
+      .client-info h4 {
+        color: #1a1a2e;
+        margin-bottom: 12px;
+        font-size: 21px;
+        letter-spacing: 2px;
+      }
+
+      .client-info p {
+        margin: 6px 0;
+        font-size: 19px;
+        letter-spacing: 0.5px;
+      }
+
+      /* ===== CONFIRMATION ===== */
+      .confirmation {
+        background: #1a1a2e;
+        color: white;
+        padding: 20px 26px;
+        margin: 22px 0;
+        text-align: center;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .confirmation p {
+        margin: 0;
+        font-size: 17px;
+        padding: 4px 0;
+        text-align: center;
+        letter-spacing: 0.5px;
+      }
+
+      /* ===== SIGNATURE SECTION ===== */
+      signature-section {
+        margin-top: 30px;
+        position: relative;
+        padding-bottom: 10px;
+        flex-shrink: 0;
+        min-height: 140px;
+        width: 100%;
+      }
+
+      .signature-box {
+        width: 1000px;
+      }
+
+      .signature-line {
+        margin-top: 5px;  
+        border-top: 1.5px solid #333;
+        width: 40%;
+        margin-bottom: 8px;
+      }
+
+      .signature-name {
+        font-weight: bold;
+        color: #1a1a2e;
+        font-size: 19px;
+        letter-spacing: 0.5px;
+      }
+
+      .signature-title {
+        font-size: 16px;
+        color: #666;
+        margin-top: 4px;
+        letter-spacing: 0.5px;
+      }
+
+      .signature-image {
+        margin-bottom: 8px;
+        display: inline-block;
+      }
+
+      .signature-image img {
+        width: 200px;         /* ← Increased from 420px to 500px */
+        max-height: 120px;
+        background: transparent !important;  /* ← Removes any background */
+        mix-blend-mode: multiply;
+        display: block;
+          
+      }
+
+      /* ===== STAMP - Positioned on the right end of signature ===== */
+      .stamp {
+        position: absolute;
+        bottom: 250px;
+        right: 120px;
+        width: 130px;
+        height: 130px;
+        border: 3px solid #b8860b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        opacity: 0.6;
+        transform: rotate(-15deg);
+        transform-origin: center center;
+        pointer-events: none;
+      }
+
+      .stamp-text {
+        font-size: 14px;
+        font-weight: bold;
+        color: #b8860b;
+        text-transform: uppercase;
+        text-align: center;
+        line-height: 1.4;
+        word-wrap: break-word;
+         padding-top: 30px; 
+      }
+
+      /* ===== FOOTER - CENTRALIZED ===== */
+      .footer {
+        margin-top: 40px;
+        padding-top: 18px;
+        text-align: center;
+        font-size: 14px;
+        color: #999;
+        border-top: 1.5px solid #eee;
+        flex-shrink: 0;
+        letter-spacing: 0.5px;
+        width: 100%;
+      }
+
+      .footer p {
+        margin: 4px 0;
+        text-align: center;
+      }
+
+      @media print {
+        html,
+        body {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        .letter-container {
+          height: 100%;
+        }
+        .letter {
+          height: 100%;
+          min-height: 100%;
+        }
+        .stamp {
+          opacity: 0.3;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="letter-container">
+      <div class="letter">
+        <!-- Stamp -->
+        <div class="stamp">
+          <div class="stamp-text">OFFICIAL<br />DOCUMENT</div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+          <div class="company-name">TAYE'S <span>PROPERTY</span></div>
+          <div class="company-tagline">& REALTY SOLUTIONS</div>
+          <div class="company-details">
+            {{address.street}}, {{address.city}}, {{address.state}},
+            {{address.country}}<br />
+            Tel: {{phone.primary}} | Email: {{email.general}}
+          </div>
+        </div>
+
+        <!-- Reference Info - Date on LEFT, Ref on RIGHT -->
+        <div class="reference-info1">
+          <div><strong>Date:</strong> {{date}}</div>
+          <div><strong>Ref:</strong> {{referenceNumber}}</div>
+        </div>
+
+        <!-- Subject -->
+        <div class="subject">
+          <h3>{{recipientTitle}}</h3>
+          <h1>{{letterTitle}}</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+          <div class="salutation">{{salutation}},</div>
+
+          <p>
+            This letter is to confirm that
+            <strong>{{clientName}}</strong> has been a valued client of TAYE'S
+            PROPERTY & REALTY SOLUTIONS.
+          </p>
+
+          <!-- Client Info Box -->
+          <div class="client-info">
+            <h4>CLIENT INFORMATION</h4>
+            <p><strong>Full Name:</strong> {{clientName}}</p>
+            <p><strong>Email:</strong> {{clientEmail}}</p>
+            <p><strong>Phone:</strong> {{clientPhone}}</p>
+          </div>
+
+          <p>
+            {{clientName}} has engaged with our company for professional real
+            estate advisory and property consultation services. Throughout our
+            professional relationship, the client has demonstrated genuine
+            interest in legitimate real estate investments and has maintained
+            professional conduct in all interactions.
+          </p>
+
+          <!-- Confirmation Statement -->
+          <div class="confirmation">
+            <p>
+              ✓ We confirm that to the best of our knowledge, the client is a
+              legitimate business partner
+            </p>
+            <p>
+              ✓ There are no negative records associated with their dealings
+              with our company
+            </p>
+            <p>
+              ✓ The client has completed all documentation requirements in a
+              timely manner
+            </p>
+          </div>
+
+          <p>
+            Should you require any additional information, please do not
+            hesitate to contact our office directly.
+          </p>
+        </div>
+
+        <!-- Signature Section - Signature on LEFT, Stamp on RIGHT -->
+        <div class="signature-section">
+          <div class="signature-box">
+            {{#if signature}}
+            <div class="signature-image">
+              <img src="{{signature}}" alt="Signature" />
+            </div>
+            {{/if}}
+            <div class="signature-line"></div>
+            <div class="signature-name">{{signatoryName}}</div>
+            <div class="signature-title">{{signatoryTitle}}</div>
+          </div>
+
+          
+        </div>
+
+        <!-- Footer - CENTRALIZED -->
+        <div class="footer">
+          <p>
+            This is an official company document. Verification can be made by
+            contacting our office.
+          </p>
+          <p>
+            TAYE'S PROPERTY & REALTY SOLUTIONS - Your Trusted Real Estate
+            Partner
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

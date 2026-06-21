@@ -43,4 +43,17 @@ router.get(
   adminUserController.downloadReferenceLetterProxy,
 );
 
+// ========== NEW VERSION (No Puppeteer) ==========
+router.post(
+  "/users/:userId/reference-letter-new",
+  adminAuth,
+  adminUserController.sendReferenceLetterNew,  // New version
+);
+
+router.get(
+  "/users/:userId/reference-letter-preview-new",
+  adminAuth,
+  adminUserController.previewReferenceLetterNew,  // New preview
+);
+
 module.exports = router;

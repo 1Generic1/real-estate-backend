@@ -11,6 +11,10 @@ const {
   generateReferenceLetterHTML,
 } = require("../../services/pdf.service");
 const Company = require("../../models/Company.model");
+const { 
+  generateReferenceLetterHTMLNew, 
+  generateReferenceLetterPDFNew 
+} = require("../../services/pdf.service2");
 
 // @desc    Send reference letter to user
 // @route   POST /api/admin/users/:id/reference-letter
@@ -898,6 +902,193 @@ exports.downloadReferenceLetterProxy = async (req, res, next) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error("❌ Proxy download error:", error);
+    next(error);
+  }
+};
+
+// @desc    Preview reference letter as HTML (NEW VERSION)
+// @route   GET /api/admin/users/:userId/reference-letter/preview-new
+// @access  Private/Admin
+exports.previewReferenceLetterNew = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    const company = await Company.findOne();
+    if (!company) {
+      throw new AppError("Company info not found", 404);
+    }
+
+    const referenceNumber = `TPR/VISA/${new Date().getFullYear()}/PREVIEW`;
+
+    const htmlContent = await generateReferenceLetterHTMLNew({
+      referenceNumber,
+      date: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      clientName: `${user.firstName} ${user.lastName}`,
+      clientEmail: user.email,
+      clientPhone: user.phone || "Not provided",
+      signatoryName: company.signatoryName || "Taye Adebayo",
+      signatoryTitle: company.signatoryTitle || "Managing Director",
+      signature: company.signature,
+      address: company.address || {},
+      phone: company.phone || {},
+      email: company.email || {},
+    });
+
+    res.send(htmlContent);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Send reference letter to user (NEW VERSION - No Puppeteer)
+// @route   POST /api/admin/users/:userId/reference-letter-new
+// @access  Private/Admin
+exports.sendReferenceLetterNew = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const {
+      templateType = "visa",
+      customTemplateName,
+      notes = "",
+      purpose = "",
+    } = req.body;
+
+    // ✅ VALIDATE PURPOSE - Return 400 if purpose is empty
+    if (!purpose || purpose.trim() === "") {
+      throw new AppError(
+        "Purpose is required. Please enter a purpose for this reference letter.",
+        400,
+        "ValidationError"
+      );
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+      // Get company info
+    const company = await Company.findOne();
+    if (!company) {
+      throw new AppError("Company not found", 404);
+    }
+
+    // ✅ Get template based on type
+    let template;
+
+    if (templateType === "custom" && customTemplateName) {
+      // ✅ Look in the custom Map
+      template = company.referenceTemplates?.custom?.get(customTemplateName);
+      if (!template) {
+        throw new AppError(
+          `Custom template "${customTemplateName}" not found. Available: ${Object.keys(company.referenceTemplates?.custom || {}).join(", ")}`,
+          404,
+        );
+      }
+    } else {
+      // ✅ Look in predefined templates
+      template = company.referenceTemplates?.[templateType];
+      if (!template) {
+        throw new AppError(
+          `Template "${templateType}" not found. Available: visa, employment, bank, general`,
+          404,
+        );
+      }
+    }
+
+    // ✅ Log to verify
+    console.log("📝 Template found:", {
+      type: templateType,
+      customName: customTemplateName,
+      template: template
+    });
+
+    // Generate reference number
+    const year = new Date().getFullYear();
+    const randomNum = Math.floor(Math.random() * 1000);
+    const referenceNumber = `TPR/${templateType.toUpperCase()}/${year}/${randomNum.toString().padStart(3, "0")}`;
+
+    // ✅ Prepare data for PDF with ALL fields
+    const pdfData = {
+      referenceNumber: referenceNumber,
+      date: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      // Template fields
+      recipientTitle: template.recipientTitle || "TO WHOM IT MAY CONCERN",
+      letterTitle: template.letterTitle || "LETTER OF REFERENCE",
+      salutation: template.salutation || "Dear Sir/Madam",
+      // Client Info
+      clientName: `${user.firstName} ${user.lastName}`,
+      clientEmail: user.email,
+      clientPhone: user.phone || "Not provided",
+      // Purpose and Notes
+      purpose: purpose,
+      notes: notes || "",
+      // Company Info
+      signatoryName: company.signatoryName || "Taye Adebayo",
+      signatoryTitle: company.signatoryTitle || "Managing Director",
+      signature: company.signature,
+      address: company.address || {},
+      phone: company.phone || {},
+      email: company.email || {},
+    };
+
+    // ✅ Log to verify data
+    console.log("📄 PDF Data:", {
+      recipientTitle: pdfData.recipientTitle,
+      letterTitle: pdfData.letterTitle,
+      salutation: pdfData.salutation,
+      clientName: pdfData.clientName,
+      purpose: pdfData.purpose,
+    });
+
+    // Generate PDF using the new pdf.service2.js
+    const pdfBuffer = await generateReferenceLetterPDFNew(pdfData);
+
+    // Upload to Cloudinary
+    const uploadResult = await uploadBuffer(pdfBuffer, {
+      folder: "tayes-property/reference-letters",
+      resource_type: "auto",
+      public_id: `ref_${referenceNumber.replace(/\//g, "_")}`,
+    });
+
+    // Save to user
+    user.referenceLetters.push({
+      letterId: referenceNumber,
+      letterType: templateType,
+      purpose,
+      notes,
+      pdfUrl: uploadResult.secure_url,
+      generatedAt: new Date(),
+      sentViaEmail: true,
+      emailSentAt: new Date(),
+    });
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Reference letter sent successfully",
+      data: {
+        pdfUrl: uploadResult.secure_url,
+        referenceNumber: referenceNumber,
+        templateType: templateType,
+      },
+    });
+  } catch (error) {
+    console.error("Reference letter generation failed:", error);
     next(error);
   }
 };
