@@ -5,145 +5,145 @@ const { Document, Page, Text, View, StyleSheet, Image } = require('@react-pdf/re
 // ===== STYLES =====
 const styles = StyleSheet.create({
   page: {
-    padding: 32,                    // Between 30 and 35
+    padding: 30,                    // Reduced from 40
     fontFamily: 'Times-Roman',
-    fontSize: 10.2,                 // Between 10 and 10.5
+    fontSize: 10,                   // Reduced from 12
     backgroundColor: 'white',
   },
   border: {
     border: '1.5pt solid #b8860b',
-    padding: 16,                    // Between 15 and 18
+    padding: 15,                    // Reduced from 20
     margin: 5,
   },
   header: {
     textAlign: 'center',
-    marginBottom: 13,               // Between 12 and 15
-    paddingBottom: 11,              // Between 10 and 12
+    marginBottom: 12,               // Reduced from 20
+    paddingBottom: 10,              // Reduced from 15
     borderBottom: '2pt solid #b8860b',
   },
   companyName: {
-    fontSize: 23,                   // Between 22 and 24
+    fontSize: 22,                   // Reduced from 28
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 2,               // Reduced from 3
     color: '#1a1a2e',
   },
   companyNameGold: {
     color: '#b8860b',
   },
   tagline: {
-    fontSize: 13.5,                 // Between 13 and 14
+    fontSize: 13,                   // Reduced from 16
     color: '#666666',
-    marginTop: 3,                   // Back to 3
-    letterSpacing: 1,
+    marginTop: 3,                   // Reduced from 5
+    letterSpacing: 1,               // Reduced from 2
   },
   companyDetails: {
-    fontSize: 9.5,                  // Between 9 and 10
+    fontSize: 9,                    // Reduced from 11
     color: '#888888',
-    marginTop: 5,                   // Back to 5
-    lineHeight: 1.4,                // Back to 1.4
+    marginTop: 5,                   // Reduced from 8
+    lineHeight: 1.4,                // Reduced from 1.6
   },
   referenceInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 11,               // Between 10 and 12
-    fontSize: 10.5,                 // Between 10 and 11
+    marginBottom: 10,               // Reduced from 20
+    fontSize: 10,                   // Reduced from 12
     color: '#555555',
   },
   subject: {
-    marginBottom: 11,               // Between 10 and 12
+    marginBottom: 10,               // Reduced from 15
   },
   subjectTitle: {
-    fontSize: 13.5,                 // Between 13 and 14
+    fontSize: 13,                   // Reduced from 16
     fontWeight: 'bold',
     color: '#1a1a2e',
-    marginBottom: 2,                // Back to 2
+    marginBottom: 2,                // Reduced from 4
   },
   subjectHeading: {
-    fontSize: 19,                   // Between 18 and 20
+    fontSize: 18,                   // Reduced from 22
     fontWeight: 'bold',
     color: '#b8860b',
     textTransform: 'uppercase',
   },
   content: {
-    marginTop: 6,                   // Between 5 and 8
-    marginBottom: 6,                // Between 5 and 8
-    lineHeight: 1.55,               // Between 1.5 and 1.6
-    fontSize: 10.5,                 // Between 10 and 11
+    marginTop: 5,                   // Reduced from 10
+    marginBottom: 5,                // Reduced from 10
+    lineHeight: 1.5,                // Reduced from 1.8
+    fontSize: 10,                   // Reduced from 13
   },
   salutation: {
-    fontSize: 12.5,                 // Between 12 and 13
-    marginBottom: 5,                // Back to 5
+    fontSize: 12,                   // Reduced from 16
+    marginBottom: 5,                // Reduced from 10
   },
   paragraph: {
-    marginBottom: 5,                // Back to 5
+    marginBottom: 5,                // Reduced from 10
     textAlign: 'justify',
   },
   clientInfo: {
     backgroundColor: '#f9f9f9',
-    padding: 11,                    // Between 10 and 12
-    marginVertical: 9,              // Between 8 and 10
+    padding: 10,                    // Reduced from 15
+    marginVertical: 8,              // Reduced from 12
     borderLeft: '4pt solid #b8860b',
   },
   clientInfoTitle: {
-    fontSize: 11.5,                 // Between 11 and 12
+    fontSize: 11,                   // Reduced from 13
     fontWeight: 'bold',
     color: '#1a1a2e',
-    marginBottom: 4,                // Between 4 and 5
+    marginBottom: 4,                // Reduced from 8
     letterSpacing: 1,
   },
   clientInfoText: {
-    fontSize: 10.5,                 // Between 10 and 11
-    marginBottom: 2,                // Back to 2
+    fontSize: 10,                   // Reduced from 13
+    marginBottom: 2,                // Reduced from 3
   },
   confirmation: {
     backgroundColor: '#1a1a2e',
     color: 'white',
-    padding: 11,                    // Between 10 and 12
-    marginVertical: 9,              // Between 8 and 10
+    padding: 10,                    // Reduced from 15
+    marginVertical: 8,              // Reduced from 15
     textAlign: 'center',
     borderRadius: 4,
   },
   confirmationText: {
     color: 'white',
-    fontSize: 10.5,                 // Between 10 and 11
-    padding: 1.5,                   // Between 1 and 2
+    fontSize: 10,                   // Reduced from 12
+    padding: 1,                     // Reduced from 2
     textAlign: 'center',
   },
   signatureSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: 14,                  // Between 12 and 16
-    paddingBottom: 6,               // Between 5 and 8
+    marginTop: 12,                  // Reduced from 20
+    paddingBottom: 5,               // Reduced from 10
   },
   signatureBox: {
     flex: 1,
   },
   signatureImage: {
-    marginBottom: 3,                // Back to 3
+    marginBottom: 3,                // Reduced from 5
   },
   signatureImg: {
-    maxWidth: 155,                  // Between 150 and 160
-    maxHeight: 42,                  // Between 40 and 45
+    maxWidth: 150,                  // Reduced from 200
+    maxHeight: 40,                  // Reduced from 60
   },
   signatureLine: {
     borderTop: '1.5pt solid #333333',
     width: '60%',
-    marginTop: 3,                   // Back to 3
-    marginBottom: 3,                // Back to 3
+    marginTop: 3,                   // Reduced from 5
+    marginBottom: 3,                // Reduced from 5
   },
   signatureName: {
-    fontSize: 12.5,                 // Between 12 and 13
+    fontSize: 12,                   // Reduced from 15
     fontWeight: 'bold',
     color: '#1a1a2e',
   },
   signatureTitle: {
-    fontSize: 10.5,                 // Between 10 and 11
+    fontSize: 10,                   // Reduced from 12
     color: '#666666',
   },
   stamp: {
-    width: 75,                      // Between 70 and 80
-    height: 75,                     // Between 70 and 80
+    width: 70,                      // Reduced from 90
+    height: 70,                     // Reduced from 90
     border: '2pt solid #b8860b',
     borderRadius: 50,
     display: 'flex',
@@ -152,27 +152,27 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     transform: 'rotate(-15deg)',
     textAlign: 'center',
-    padding: 5,                     // Back to 5
+    padding: 5,                     // Reduced from 8
   },
   stampText: {
-    fontSize: 8.5,                  // Between 8 and 9
+    fontSize: 8,                    // Reduced from 10
     fontWeight: 'bold',
     color: '#b8860b',
     textTransform: 'uppercase',
     textAlign: 'center',
-    lineHeight: 1.25,               // Between 1.2 and 1.3
+    lineHeight: 1.2,
   },
   footer: {
-    marginTop: 11,                  // Between 10 and 12
-    paddingTop: 9,                  // Between 8 and 10
+    marginTop: 10,                  // Reduced from 15
+    paddingTop: 8,                  // Reduced from 10
     textAlign: 'center',
-    fontSize: 8.5,                  // Between 8 and 9
+    fontSize: 8,                    // Reduced from 10
     color: '#999999',
     borderTop: '1pt solid #eeeeee',
   },
   footerText: {
     textAlign: 'center',
-    marginBottom: 1.5,              // Between 1 and 2
+    marginBottom: 1,                // Reduced from 2
   },
 });
 
