@@ -56,4 +56,11 @@ router.get(
   adminUserController.previewReferenceLetterNew,  // New preview
 );
 
+// ========== NEW PDF GENERATION (React-PDF) ==========
+router.post(
+  "/users/:userId/reference-letter-pdf3",
+  adminAuth,
+  adminUserController.sendReferenceLetterPDF3
+);
+
 module.exports = router;

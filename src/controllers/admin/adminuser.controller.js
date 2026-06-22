@@ -15,6 +15,7 @@ const {
   generateReferenceLetterHTMLNew, 
   generateReferenceLetterPDFNew 
 } = require("../../services/pdf.service2");
+const { generateReferenceLetterPDF3 } = require("../../services/pdf.service3");
 
 // @desc    Send reference letter to user
 // @route   POST /api/admin/users/:id/reference-letter
@@ -1057,6 +1058,128 @@ exports.sendReferenceLetterNew = async (req, res, next) => {
 
     // Generate PDF using the new pdf.service2.js
     const pdfBuffer = await generateReferenceLetterPDFNew(pdfData);
+
+    // Upload to Cloudinary
+    const uploadResult = await uploadBuffer(pdfBuffer, {
+      folder: "tayes-property/reference-letters",
+      resource_type: "auto",
+      public_id: `ref_${referenceNumber.replace(/\//g, "_")}`,
+    });
+
+    // Save to user
+    user.referenceLetters.push({
+      letterId: referenceNumber,
+      letterType: templateType,
+      purpose,
+      notes,
+      pdfUrl: uploadResult.secure_url,
+      generatedAt: new Date(),
+      sentViaEmail: true,
+      emailSentAt: new Date(),
+    });
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Reference letter sent successfully",
+      data: {
+        pdfUrl: uploadResult.secure_url,
+        referenceNumber: referenceNumber,
+        templateType: templateType,
+      },
+    });
+  } catch (error) {
+    console.error("Reference letter generation failed:", error);
+    next(error);
+  }
+};
+
+// @desc    Send reference letter to user (NEW - React-PDF)
+// @route   POST /api/admin/users/:userId/reference-letter-pdf3
+// @access  Private/Admin
+exports.sendReferenceLetterPDF3 = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const {
+      templateType = "visa",
+      customTemplateName,
+      notes = "",
+      purpose = "",
+    } = req.body;
+
+    // Validate purpose
+    if (!purpose || purpose.trim() === "") {
+      throw new AppError(
+        "Purpose is required. Please enter a purpose for this reference letter.",
+        400,
+        "ValidationError"
+      );
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    // Get company info
+    const company = await Company.findOne();
+    if (!company) {
+      throw new AppError("Company not found", 404);
+    }
+
+    // Get template based on type
+    let template;
+
+    if (templateType === "custom" && customTemplateName) {
+      template = company.referenceTemplates?.custom?.get(customTemplateName);
+      if (!template) {
+        throw new AppError(
+          `Custom template "${customTemplateName}" not found. Available: ${Object.keys(company.referenceTemplates?.custom || {}).join(", ")}`,
+          404,
+        );
+      }
+    } else {
+      template = company.referenceTemplates?.[templateType];
+      if (!template) {
+        throw new AppError(
+          `Template "${templateType}" not found. Available: visa, employment, bank, general`,
+          404,
+        );
+      }
+    }
+
+    // Generate reference number
+    const year = new Date().getFullYear();
+    const randomNum = Math.floor(Math.random() * 1000);
+    const referenceNumber = `TPR/${templateType.toUpperCase()}/${year}/${randomNum.toString().padStart(3, "0")}`;
+
+    // Prepare data for PDF
+    const pdfData = {
+      referenceNumber: referenceNumber,
+      date: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      recipientTitle: template.recipientTitle || "TO WHOM IT MAY CONCERN",
+      letterTitle: template.letterTitle || "LETTER OF REFERENCE",
+      salutation: template.salutation || "Dear Sir/Madam",
+      clientName: `${user.firstName} ${user.lastName}`,
+      clientEmail: user.email,
+      clientPhone: user.phone || "Not provided",
+      signatoryName: company.signatoryName || "Taye Adebayo",
+      signatoryTitle: company.signatoryTitle || "Managing Director",
+      signature: company.signature,
+      address: company.address || {},
+      phone: company.phone || {},
+      email: company.email || {},
+    };
+
+    console.log("📄 Generating PDF with React-PDF for:", pdfData.clientName);
+
+    // Generate PDF using React-PDF
+    const pdfBuffer = await generateReferenceLetterPDF3(pdfData);
 
     // Upload to Cloudinary
     const uploadResult = await uploadBuffer(pdfBuffer, {
