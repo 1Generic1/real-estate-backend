@@ -62,9 +62,9 @@ const generateReferenceLetterPDFNew = async (data) => {
         // ===== MARGINS =====
         border: {
           top: "15px",
-          bottom: "15px",
-          left: "20px",
-          right: "20px"
+          bottom: "10px",
+          left: "15px",
+          right: "15px"
         },
         
         // ===== HELPS FILL THE PAGE =====
