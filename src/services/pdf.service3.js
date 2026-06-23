@@ -1,7 +1,7 @@
 // server/src/services/pdf.service3.js
 const React = require('react');
 const ReactPDF = require('@react-pdf/renderer');
-const ReferenceLetterPDF = require('../templates/pdfTemplateHostinger');
+const ReferenceLetterPDF = require('../templates/pdfTemplate');
 
 /**
  * Generate PDF using @react-pdf/renderer (No Puppeteer)
