@@ -2,6 +2,7 @@ const puppeteer = require("puppeteer");
 const handlebars = require("handlebars");
 const fs = require("fs").promises;
 const path = require("path");
+const os = require("os");
 
 // Compile Handlebars template
 let compiledTemplate = null;
@@ -16,6 +17,37 @@ const getTemplate = async () => {
     compiledTemplate = handlebars.compile(html);
   }
   return compiledTemplate;
+};
+
+// ✅ Get platform-specific executable path
+const getExecutablePath = () => {
+  const platform = os.platform();
+  
+  if (platform === 'win32') {
+    // Windows - check common Chrome installation paths
+    const commonPaths = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Users\\' + process.env.USERNAME + '\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+    ];
+    for (const p of commonPaths) {
+      try {
+        if (require('fs').existsSync(p)) {
+          return p;
+        }
+      } catch (e) {}
+    }
+    return null; // Let Puppeteer find it automatically
+  } else if (platform === 'linux') {
+    // Linux (VPS) - use system Chromium
+    return '/usr/bin/chromium-browser';
+  } else if (platform === 'darwin') {
+    // macOS
+    return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  }
+  
+  // Fallback - let Puppeteer find it
+  return null;
 };
 
 const generateReferenceLetterPDF = async (data) => {
@@ -41,10 +73,21 @@ const generateReferenceLetterPDF = async (data) => {
       email: data.email || {},
     });
 
-    browser = await puppeteer.launch({
+    // ✅ Get platform-specific executable path
+    const executablePath = getExecutablePath();
+    const launchOptions = {
       headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    };
+    
+    // Only add executablePath if not on Windows (Puppeteer can find it automatically)
+    if (executablePath && os.platform() !== 'win32') {
+      launchOptions.executablePath = executablePath;
+    }
+    
+    console.log(`🚀 Launching browser on ${os.platform()}${executablePath ? ` with: ${executablePath}` : ' (auto-detected)'}`);
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
 
@@ -53,7 +96,6 @@ const generateReferenceLetterPDF = async (data) => {
       waitUntil: "networkidle0",
     });
 
-    // Calculate optimal scale to fit content on one page
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -63,9 +105,7 @@ const generateReferenceLetterPDF = async (data) => {
         left: "20px",
         right: "20px",
       },
-      // Let the content determine the layout
       preferCSSPageSize: true,
-      // Scale content down if needed
       scale: 0.95,
     });
 
