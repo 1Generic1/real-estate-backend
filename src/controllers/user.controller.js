@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { generateReferenceLetter } = require("../services/pdf.service");
 const { sendVerificationEmail } = require("../services/emailService");
+const { sendPasswordResetEmail } = require("../services/emailService");
 
 // ==================== PUBLIC FUNCTIONS ====================
 
@@ -203,6 +204,14 @@ exports.forgotPassword = async (req, res, next) => {
 
     // TODO: Send reset email
     // await sendPasswordResetEmail(user.email, resetToken, user.firstName);
+     // Send reset email
+    try {
+      await sendPasswordResetEmail(user.email, resetToken, user.firstName);
+      console.log(`✅ Password reset email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+      // Don't fail the request if email fails
+    }
 
     res.json({
       success: true,

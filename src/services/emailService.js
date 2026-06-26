@@ -48,32 +48,36 @@ async function sendVerificationEmail(userEmail, verificationToken, firstName) {
 }
 
 // Function to send password reset email
-async function sendPasswordResetEmail(userEmail, resetToken) {
-  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+async function sendPasswordResetEmail(userEmail, resetToken, firstName) {
+  const baseUrl = process.env.CLIENT_URL || "http://localhost:3000";
+  const resetLink = `${baseUrl}/reset-password/${resetToken}`;
 
   const mailOptions = {
-    from: '"TAYE\'S PROPERTY" <support@tayespropertyandrealtysolution.com>',
+    from: `"TAYE'S PROPERTY" <${process.env.EMAIL_USER}>`,
     to: userEmail,
     subject: "Reset Your Password",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #b8860b;">Password Reset Request</h2>
-        <p>Click the link below to reset your password:</p>
+        <h2 style="color: #b8860b;">Reset Your Password</h2>
+        <p>Hello ${firstName || "there"}!</p>
+        <p>We received a request to reset your password. Click the link below to set a new password:</p>
         <a href="${resetLink}" style="display: inline-block; background-color: #b8860b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">
           Reset Password
         </a>
         <p>This link will expire in 1 hour.</p>
         <p>If you didn't request this, please ignore this email.</p>
+        <hr />
+        <p style="font-size: 12px; color: #666;">TAYE'S PROPERTY & REALTY SOLUTIONS</p>
       </div>
     `,
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent:", info.messageId);
+    console.log("✅ Password reset email sent:", info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error("❌ Email sending failed:", error);
     return { success: false, error: error.message };
   }
 }

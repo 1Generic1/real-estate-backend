@@ -214,6 +214,7 @@ exports.sendReferenceLetter2 = async (req, res, next) => {
   }
 };
 
+//this is the one that works perfectly with puppeteer  
 exports.sendReferenceLetter = async (req, res, next) => {
   try {
     const { userId } = req.params;

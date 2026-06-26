@@ -60,8 +60,14 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
-    passwordResetToken: String,
-    passwordResetExpires: Date,
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+    },
 
     // ===== PROFILE INFORMATION =====
     avatar: {
