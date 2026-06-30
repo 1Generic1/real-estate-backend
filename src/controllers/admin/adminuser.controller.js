@@ -16,6 +16,7 @@ const {
   generateReferenceLetterPDFNew 
 } = require("../../services/pdf.service2");
 const { generateReferenceLetterPDF3 } = require("../../services/pdf.service3");
+const { sendReferenceLetterEmail } = require("../../services/emailService");
 
 // @desc    Send reference letter to user
 // @route   POST /api/admin/users/:id/reference-letter
@@ -307,9 +308,30 @@ exports.sendReferenceLetter = async (req, res, next) => {
     });
     await user.save();
 
+    // ✅ SEND EMAIL TO USER WITH PDF LINK
+    let emailSent = false;  // ← ADD THIS
+    try {
+      await sendReferenceLetterEmail(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        referenceNumber,
+        uploadResult.secure_url,
+        purpose
+      );
+      emailSent = true;  // ← SET TO TRUE IF SUCCESS
+      console.log(`✅ Reference letter email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error("❌ Failed to send reference letter email:", emailError);
+      // Don't fail the request if email fails - the letter is already saved
+    }
+
+    // ✅ RESPONSE WITH emailSent FLAG
     res.json({
       success: true,
-      message: "Reference letter sent successfully",
+      emailSent: emailSent,  
+      message: emailSent 
+        ? "Reference letter sent successfully. An email has been sent to the user."
+        : "Reference letter generated successfully, but email delivery failed. The PDF is available in the user's records.",
       data: {
         pdfUrl: uploadResult.secure_url,
         referenceNumber: referenceNumber,

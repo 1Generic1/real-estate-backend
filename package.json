@@ -25,6 +25,7 @@
     "html-pdf": "^3.0.1",
     "html-to-pdf-headless": "^2.0.2",
     "jsonwebtoken": "^9.0.3",
+    "libphonenumber-js": "^1.13.7",
     "mongodb": "^7.1.0",
     "mongoose": "^9.3.0",
     "multer": "^2.1.1",

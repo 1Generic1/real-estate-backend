@@ -10,6 +10,10 @@ const jwt = require("jsonwebtoken");
 const { generateReferenceLetter } = require("../services/pdf.service");
 const { sendVerificationEmail } = require("../services/emailService");
 const { sendPasswordResetEmail } = require("../services/emailService");
+const { 
+  sendAdvancedVerificationEmail,
+  sendAdvancedResendVerificationEmail, 
+} = require("../services/emailService");
 
 // ==================== PUBLIC FUNCTIONS ====================
 
@@ -50,7 +54,7 @@ exports.register = async (req, res, next) => {
 
     // Send verification email
     try {
-      await sendVerificationEmail(user.email, verificationToken, user.firstName);
+      await sendAdvancedVerificationEmail(user.email, verificationToken, user.firstName);
       console.log(`✅ Verification email sent to ${user.email}`);
     } catch (emailError) {
       console.error(`❌ Failed to send verification email to ${user.email}:`, emailError.message);
@@ -107,12 +111,258 @@ exports.verifyEmail = async (req, res, next) => {
   }
 };
 
-// @desc    Verify email
-// @route   GET /api/users/verify-email/:token
+// ✅ NEW: ADVANCED VERIFY EMAIL WITH TOKEN
+// ============================================
+// @desc    Verify email with token (Advanced version with better error handling)
+// @route   GET /api/users/verify-email-advanced/:token
+// @access  Public
+exports.verifyEmailAdvanced = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: "Verification token is required",
+      });
+    }
+
+    // Find user with matching token and not expired
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      // Check if token exists but expired
+      const expiredUser = await User.findOne({
+        verificationToken: token,
+        verificationExpires: { $lte: Date.now() },
+      });
+
+      if (expiredUser) {
+        return res.status(400).json({
+          success: false,
+          error: "Verification link has expired. Please request a new one.",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        error: "Invalid verification token. Please request a new link.",
+      });
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        error: "Email already verified. Please login.",
+      });
+    }
+
+    // Update user
+    user.emailVerified = true;
+    user.verificationToken = undefined;
+    user.verificationExpires = undefined;
+    user.verificationEmailSentAt = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully! You can now login.",
+    });
+
+  } catch (error) {
+    console.error("Verify email advanced error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to verify email. Please try again.",
+    });
+  }
+};
+
+// ============================================
+// ✅ NEW: RESEND VERIFICATION EMAIL (ADVANCED)
+// ============================================
+// @desc    Resend verification email with cooldown
+// @route   POST /api/users/resend-verification-email
+// @access  Public
+exports.resendVerificationEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is required",
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found. Please sign up first.",
+      });
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is already verified. Please login.",
+      });
+    }
+
+    // Check cooldown (prevent spam) - 60 seconds
+    const lastSent = user.verificationEmailSentAt;
+    if (lastSent) {
+      const timeSinceLast = Date.now() - new Date(lastSent).getTime();
+      const cooldownSeconds = 60;
+      
+      if (timeSinceLast < cooldownSeconds * 1000) {
+        const remaining = Math.ceil((cooldownSeconds * 1000 - timeSinceLast) / 1000);
+        return res.status(429).json({
+          success: false,
+          error: `Please wait ${remaining} seconds before requesting another email`,
+          remainingSeconds: remaining,
+        });
+      }
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    user.verificationToken = verificationToken;
+    user.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    user.verificationEmailSentAt = new Date();
+    await user.save();
+
+    // ✅ USE NEW ADVANCED RESEND FUNCTION
+    await sendAdvancedResendVerificationEmail(
+      user.email,
+      verificationToken,
+      user.firstName
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Verification email sent successfully. Please check your inbox.",
+    });
+
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to send verification email. Please try again.",
+    });
+  }
+};
+
+// ============================================
+// ✅ NEW: CHANGE VERIFICATION EMAIL (ADVANCED)
+// ============================================
+// @desc    Change email and send new verification link
+// @route   POST /api/users/change-verification-email
+// @access  Public
+exports.changeVerificationEmail = async (req, res, next) => {
+  try {
+    const { oldEmail, newEmail } = req.body;
+
+    if (!oldEmail || !newEmail) {
+      return res.status(400).json({
+        success: false,
+        error: "Both old and new email are required",
+      });
+    }
+
+    // Validate new email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: "Please enter a valid email address",
+      });
+    }
+
+    // Normalize emails
+    const normalizedOldEmail = oldEmail.toLowerCase().trim();
+    const normalizedNewEmail = newEmail.toLowerCase().trim();
+
+    // Check if emails are the same
+    if (normalizedOldEmail === normalizedNewEmail) {
+      return res.status(400).json({
+        success: false,
+        error: "New email is the same as current email",
+      });
+    }
+
+    // Find user by old email
+    const user = await User.findOne({ email: normalizedOldEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found with this email",
+      });
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is already verified. Please login.",
+      });
+    }
+
+    // Check if new email already exists
+    const existingUser = await User.findOne({ email: normalizedNewEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: "This email is already registered. Please use a different email.",
+      });
+    }
+
+    // Update user email
+    user.email = normalizedNewEmail;
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    user.verificationToken = verificationToken;
+    user.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    user.verificationEmailSentAt = new Date();
+    await user.save();
+
+    // ✅ USE NEW ADVANCED VERIFICATION FUNCTION
+    await sendAdvancedVerificationEmail(
+      user.email,
+      verificationToken,
+      user.firstName
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Email updated successfully. Verification email sent to new address.",
+    });
+
+  } catch (error) {
+    console.error("Change verification email error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to update email. Please try again.",
+    });
+  }
+};
+
+// @desc    Login user
+// @route   POST /api/users/login
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body; // ← ADD rememberMe
 
     if (!email || !password) {
       throw new AppError("Email and password are required", 400, "ValidationError");
@@ -152,11 +402,15 @@ exports.login = async (req, res, next) => {
     // Update last login
     await user.updateLastLogin();
 
-    // Generate token
+    // ✅ SET TOKEN EXPIRY BASED ON REMEMBER ME
+    // If rememberMe is true, token lasts 7 days
+    // If rememberMe is false or undefined, token lasts 24 hours
+    const tokenExpiry = rememberMe ? '7d' : '1d';
+    
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE || "7d" }
+      { expiresIn: tokenExpiry } // ← NOW CONTROLLED BY REMEMBER ME
     );
 
     const userResponse = user.toObject();
@@ -167,8 +421,11 @@ exports.login = async (req, res, next) => {
       data: {
         token,
         user: userResponse,
+        expiresIn: rememberMe ? '7 days' : '24 hours' // ← OPTIONAL: Send expiry info
       },
-      message: "Login successful",
+      message: rememberMe 
+        ? "Login successful (remembered for 7 days)" 
+        : "Login successful (session expires in 24 hours)",
     });
   } catch (error) {
     next(error);
@@ -181,6 +438,7 @@ exports.login = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
+    console.log("📧 Received email:", email); 
 
     if (!email) {
       throw new AppError("Email is required", 400);

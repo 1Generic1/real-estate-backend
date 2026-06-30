@@ -1,14 +1,45 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { parsePhoneNumberFromString } = require('libphonenumber-js');
 
+// ===== PHONE VALIDATION =====
 const validatePhone = (phone) => {
-  // Remove all spaces, dashes, dots, and parentheses
-  const cleaned = phone.replace(/[\s\-\.\(\)]/g, "");
+  if (!phone) return true; // Allow empty phone
+  try {
+    const phoneNumber = parsePhoneNumberFromString(phone);
+    if (!phoneNumber) return false;
+    return phoneNumber.isValid();
+  } catch (error) {
+    return false;
+  }
+};
 
-  // Nigerian phone number patterns:
-  // Option 1: +234XXXXXXXXXX (14 characters)
-  // Option 2: 0XXXXXXXXXXX (11 characters)
-  return /^(\+234|0)[789][01]\d{8}$/.test(cleaned);
+// ===== FORMAT PHONE NUMBER =====
+const formatPhone = (phone) => {
+  if (!phone) return phone;
+  try {
+    const phoneNumber = parsePhoneNumberFromString(phone);
+    if (phoneNumber && phoneNumber.isValid()) {
+      return phoneNumber.formatInternational();
+    }
+    return phone;
+  } catch (error) {
+    return phone;
+  }
+};
+
+// ===== GET COUNTRY CODE =====
+const getPhoneCountryCode = (phone) => {
+  if (!phone) return null;
+  try {
+    const phoneNumber = parsePhoneNumberFromString(phone);
+    if (phoneNumber && phoneNumber.isValid()) {
+      return phoneNumber.country;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
 };
 
 const userSchema = new mongoose.Schema(
@@ -42,14 +73,25 @@ const userSchema = new mongoose.Schema(
       ],
     },
 
+    // ===== PHONE WITH INTERNATIONAL SUPPORT =====
     phone: {
       type: String,
       trim: true,
       validate: {
         validator: validatePhone,
         message: (props) =>
-          `${props.value} is not a valid phone number! Use format:  +2348012345678 or 08012345678`,
+          `${props.value} is not a valid phone number. Please enter a valid international number (e.g., +2348012345678 or +18001234567)`,
       },
+    },
+
+    // Store formatted version
+    phoneFormatted: {
+      type: String,
+    },
+
+    // Store country code (e.g., "NG", "US", "GB")
+    phoneCountryCode: {
+      type: String,
     },
 
     // ===== AUTHENTICATION =====

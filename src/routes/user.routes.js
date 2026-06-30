@@ -16,6 +16,21 @@ router.post("/register", userController.register);
 // @access  Public
 router.get("/verify-email/:token", userController.verifyEmail);
 
+// @route   GET /api/users/verify-email-advanced/:token
+// @desc    Verify email with advanced handling (better error messages)
+// @access  Public
+router.get("/verify-email-advanced/:token", userController.verifyEmailAdvanced);
+
+// @route   POST /api/users/resend-verification-email
+// @desc    Resend verification email with 60-second cooldown
+// @access  Public
+router.post("/resend-verification-email", userController.resendVerificationEmail);
+
+// @route   POST /api/users/change-verification-email
+// @desc    Change email address and resend verification
+// @access  Public
+router.post("/change-verification-email", userController.changeVerificationEmail);
+
 // @route   POST /api/users/login
 // @desc    Login user
 // @access  Public
